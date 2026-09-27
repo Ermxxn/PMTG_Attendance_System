@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PMTG Hari Sukan Negara 2026 — Attendance QR</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1e3a;
+      --accent: #ffcc00;
+      --card: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #123063, var(--bg));
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      color: white;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .logos {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .logos img {
+      height: 56px;
+    }
+
+    h1 {
+      font-size: clamp(20px, 3vw, 34px);
+      margin: 4px 0 2px;
+    }
+
+    h2 {
+      font-weight: 400;
+      font-size: clamp(14px, 2vw, 18px);
+      color: var(--accent);
+      margin: 0 0 24px;
+    }
+
+    .qr-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    #qrcode {
+      width: 320px;
+      height: 320px;
+    }
+
+    .timer-wrap {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #0b1e3a;
+      font-weight: 600;
+    }
+
+    .timer-bar {
+      width: 220px;
+      height: 8px;
+      background: #e5e5e5;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 1s linear;
+    }
+
+    .status {
+      margin-top: 18px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .status.error {
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="logos">
+    <!-- Drop your logo <img> tags here, e.g. -->
+    <!-- <img src="LOGOPMTG.png" alt="PMTG logo"> -->
+  </div>
+
+  <h1>HARI SUKAN NEGARA PMTG 2026</h1>
+  <h2>Scan to mark attendance — this code refreshes every 15 seconds</h2>
+
+  <div class="qr-card">
+    <div id="qrcode"></div>
+    <div class="timer-wrap">
+      <span id="timerLabel">15s</span>
+      <div class="timer-bar">
+        <div class="timer-fill" id="timerFill" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status">Loading...</div>
+
+  <script>
+    // ====== CONFIG — edit these lines ======
+    const SUPABASE_FUNCTIONS_URL = "https://ryfryacxmrzuslazrtme.supabase.co/rest/v1/";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5ZnJ5YWN4bXJ6dXNsYXpydG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDg2NjcsImV4cCI6MjEwNjA4NDY2N30.-oIe-b7xwrd-19VPiggvM20RR14mTAQ0gw_Kl990Ko8";
+    const EVENT_ID = "d6d16272-aa4e-4c1b-b643-c68ee4f8af0f";
+    const CHECKIN_PAGE_URL = "https://ermxxn.github.io/PMTG_Attendance_System/checkin.html";
+    // ==========================================
+
+    const qrDiv = document.getElementById("qrcode");
+    const statusDiv = document.getElementById("status");
+    const timerFill = document.getElementById("timerFill");
+    const timerLabel = document.getElementById("timerLabel");
+
+    let qr = null;
+    let countdownInterval = null;
+
+    async function refreshQR() {
+      try {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/generate-token?event_id=${EVENT_ID}`, {
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load QR");
+
+        const checkinUrl = `${CHECKIN_PAGE_URL}?event_id=${EVENT_ID}&token=${data.token}`;
+
+        if (!qr) {
+          qr = new QRCode(qrDiv, {
+            text: checkinUrl,
+            width: 280,
+            height: 280,
+            colorDark: "#0b1e3a",
+            colorLight: "#ffffff",
+          });
+        } else {
+          qr.clear();
+          qr.makeCode(checkinUrl);
+        }
+
+        statusDiv.textContent = "";
+        statusDiv.classList.remove("error");
+        startCountdown(data.expires_in, data.time_step);
+      } catch (err) {
+        statusDiv.textContent = "Could not refresh QR — " + err.message;
+        statusDiv.classList.add("error");
+      }
+    }
+
+    function startCountdown(seconds, totalStep) {
+      clearInterval(countdownInterval);
+      let remaining = seconds;
+      updateTimerUI(remaining, totalStep);
+      countdownInterval = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          refreshQR();
+          return;
+        }
+        updateTimerUI(remaining, totalStep);
+      }, 1000);
+    }
+
+    function updateTimerUI(remaining, totalStep) {
+      timerLabel.textContent = remaining + "s";
+      timerFill.style.width = `${(remaining / totalStep) * 100}%`;
+    }
+
+    refreshQR();
+  </script>
+</body>
+
+</html>

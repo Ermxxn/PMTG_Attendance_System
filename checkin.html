@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PMTG Attendance Check-In</title>
+  <style>
+    :root {
+      --bg: #0b1e3a;
+      --accent: #ffcc00;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #0b1e3a, #163a70);
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      border-radius: 18px;
+      padding: 28px 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    .logos {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .logos img {
+      height: 40px;
+    }
+
+    h1 {
+      font-size: 19px;
+      text-align: center;
+      color: #0b1e3a;
+      margin: 4px 0 2px;
+    }
+
+    p.sub {
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+      margin: 0 0 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0b1e3a;
+      margin: 14px 0 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #d8dce5;
+      border-radius: 10px;
+      font-size: 15px;
+      text-transform: uppercase;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    button {
+      width: 100%;
+      margin-top: 22px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--bg);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .msg {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+    }
+
+    .msg.success {
+      background: #e6f8ec;
+      color: #187a3c;
+      display: block;
+    }
+
+    .msg.error {
+      background: #fdeaea;
+      color: #c0392b;
+      display: block;
+    }
+
+    .gps-note {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <div class="logos">
+      <!-- <img src="LOGOPMTG.png" alt="PMTG logo"> -->
+    </div>
+    <h1>HARI SUKAN NEGARA PMTG 2026</h1>
+    <p class="sub">Attendance Check-In</p>
+
+    <form id="checkinForm">
+      <label for="fullName">Full Name</label>
+      <input type="text" id="fullName" placeholder="JOHN A/L DOE" required>
+
+      <label for="className">Class</label>
+      <input type="text" id="className" placeholder="DIT3B" required>
+
+      <label for="matricNo">Matric Number</label>
+      <input type="text" id="matricNo" placeholder="32DIT27F1000" required>
+
+      <button type="submit" id="submitBtn">Mark Attendance</button>
+      <div class="gps-note" id="gpsNote">Getting your location...</div>
+    </form>
+
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script>
+    // ====== CONFIG ======
+    const SUPABASE_FUNCTIONS_URL = "https://ryfryacxmrzuslazrtme.supabase.co/rest/v1/";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5ZnJ5YWN4bXJ6dXNsYXpydG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDg2NjcsImV4cCI6MjEwNjA4NDY2N30.-oIe-b7xwrd-19VPiggvM20RR14mTAQ0gw_Kl990Ko8";
+    // =============================================
+
+    const params = new URLSearchParams(window.location.search);
+    const eventId = params.get("event_id");
+    const token = params.get("token");
+
+    const form = document.getElementById("checkinForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const msg = document.getElementById("msg");
+    const gpsNote = document.getElementById("gpsNote");
+
+    let gpsLat = null;
+    let gpsLng = null;
+
+    // Force-capitalize as the student types, so what they see matches what's stored
+    ["fullName", "className", "matricNo"].forEach((id) => {
+      const el = document.getElementById(id);
+      el.addEventListener("input", () => {
+        const pos = el.selectionStart;
+        el.value = el.value.toUpperCase();
+        el.setSelectionRange(pos, pos);
+      });
+    });
+
+    function showMsg(text, type) {
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+    }
+
+    if (!eventId || !token) {
+      showMsg("Invalid check-in link. Please scan the QR code on screen again.", "error");
+      submitBtn.disabled = true;
+      gpsNote.textContent = "";
+    } else if (!navigator.geolocation) {
+      gpsNote.textContent = "Location is not supported on this device/browser.";
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          gpsLat = pos.coords.latitude;
+          gpsLng = pos.coords.longitude;
+          gpsNote.textContent = "Location captured ✓";
+        },
+        (err) => {
+          gpsNote.textContent = "Could not get location — enable location access and reload.";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting...";
+      msg.className = "msg";
+
+      const full_name = document.getElementById("fullName").value.trim();
+      const className = document.getElementById("className").value.trim();
+      const matric_no = document.getElementById("matricNo").value.trim();
+
+      try {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/check-in`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            event_id: eventId,
+            token,
+            full_name,
+            class: className,
+            matric_no,
+            gps_lat: gpsLat,
+            gps_lng: gpsLng,
+          }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Something went wrong");
+
+        showMsg("Attendance marked successfully! You may close this page.", "success");
+        form.style.display = "none";
+      } catch (err) {
+        showMsg(err.message, "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Mark Attendance";
+      }
+    });
+  </script>
+</body>
+
+</html>
