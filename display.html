@@ -62,8 +62,9 @@
     }
 
     #qrcode {
-      width: 320px;
-      height: 320px;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto;
     }
 
     .timer-wrap {
@@ -143,7 +144,7 @@
 
     async function refreshQR() {
       try {
-        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/super-responder?event_id=${EVENT_ID}`, {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/check-in?event_id=${EVENT_ID}`, {
           headers: {
             "apikey": SUPABASE_ANON_KEY,
             "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
