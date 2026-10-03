@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>PMTG Attendance — Admin</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -382,507 +387,564 @@
         </div>
 
         <div class="card">
+            <h2>Venue &amp; Geofence <small>— students must be within this radius to check in</small></h2>
+            <div class="row">
+                <div><label class="f" for="venueLat">Latitude</label><input type="text" inputmode="decimal"
+                        id="venueLat" placeholder="5.4850991" autocomplete="off"></div>
+                <div><label class="f" for="venueLng">Longitude</label><input type="text" inputmode="decimal"
+                        id="venueLng" placeholder="100.4902697" autocomplete="off"></div>
+                <div><label class="f" for="venueRadius">Radius (m)</label><input type="text" inputmode="numeric"
+                        id="venueRadius" placeholder="200" autocomplete="off"></div>
+            </div>
+            <div class="row" style="margin-top: 10px">
+                <div class="btn-wrap"><button class="btn light" id="useLocationBtn">Use my current location</button>
+                </div>
+                <div class="btn-wrap"><button class="btn" id="saveVenueBtn">Save venue</button></div>
+                <div style="flex: 1 1 160px; font-size: 12px; color: var(--muted)" id="venueNote"></div>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>Export PDF</h2>
-            <div class="row">
-                <div style="flex: 2 1 260px">
-                    <label class="f" for="pdfTitle">Event name on the PDF</label>
-                    <input type="text" id="pdfTitle" placeholder="Event name" autocomplete="off">
+
+            <div class="card">
+                <h2>Add attendance manually</h2>
+                <div class="row">
+                    <div style="flex: 2 1 220px"><label class="f" for="mName">Full name</label><input type="text"
+                            id="mName" autocomplete="off"></div>
+                    <div><label class="f" for="mClass">Class</label><input type="text" id="mClass" autocomplete="off">
+                    </div>
+                    <div><label class="f" for="mMatric">Matric number</label><input type="text" id="mMatric"
+                            autocomplete="off"></div>
+                    <div class="btn-wrap"><button class="btn" id="addBtn">Add</button></div>
                 </div>
-                <div>
-                    <label class="f" for="sortBy">Sort by</label>
-                    <select id="sortBy">
-                        <option value="class">Class, then name</option>
-                        <option value="time">Time checked in</option>
-                    </select>
+            </div>
+
+            <div class="card">
+                <h2>Attendance <small id="countLabel"></small></h2>
+                <div class="row">
+                    <div style="flex: 3 1 240px"><input type="text" id="search"
+                            placeholder="Search name, class or matric number" autocomplete="off"></div>
+                    <div class="btn-wrap"><button class="btn light" id="refreshBtn">Refresh</button></div>
                 </div>
-                <div class="btn-wrap"><button class="btn accent" id="exportBtn">Download PDF</button></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Add attendance manually</h2>
-            <div class="row">
-                <div style="flex: 2 1 220px"><label class="f" for="mName">Full name</label><input type="text" id="mName"
-                        autocomplete="off"></div>
-                <div><label class="f" for="mClass">Class</label><input type="text" id="mClass" autocomplete="off"></div>
-                <div><label class="f" for="mMatric">Matric number</label><input type="text" id="mMatric"
-                        autocomplete="off"></div>
-                <div class="btn-wrap"><button class="btn" id="addBtn">Add</button></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Attendance <small id="countLabel"></small></h2>
-            <div class="row">
-                <div style="flex: 3 1 240px"><input type="text" id="search"
-                        placeholder="Search name, class or matric number" autocomplete="off"></div>
-                <div class="btn-wrap"><button class="btn light" id="refreshBtn">Refresh</button></div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Class</th>
-                            <th>Matric No.</th>
-                            <th>Time</th>
-                            <th>Via</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Manage events</h2>
-            <div class="row">
-                <div style="flex: 2 1 260px">
-                    <label class="f" for="newEventName">New event name</label>
-                    <input type="text" id="newEventName" placeholder="e.g. Hari Sukan Negara PMTG 2026 - Day 2"
-                        autocomplete="off">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Class</th>
+                                <th>Matric No.</th>
+                                <th>Time</th>
+                                <th>Via</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
                 </div>
-                <div class="btn-wrap"><button class="btn" id="createBtn">Create &amp; make live</button></div>
             </div>
-            <div class="row" style="margin-top: 16px">
-                <div class="btn-wrap"><button class="btn danger" id="resetBtn">Reset attendance for the selected
-                        event</button></div>
+
+            <div class="card">
+                <h2>Manage events</h2>
+                <div class="row">
+                    <div style="flex: 2 1 260px">
+                        <label class="f" for="newEventName">New event name</label>
+                        <input type="text" id="newEventName" placeholder="e.g. Hari Sukan Negara PMTG 2026 - Day 2"
+                            autocomplete="off">
+                    </div>
+                    <div class="btn-wrap"><button class="btn" id="createBtn">Create &amp; make live</button></div>
+                </div>
+                <div class="row" style="margin-top: 16px">
+                    <div class="btn-wrap"><button class="btn danger" id="resetBtn">Reset attendance for the selected
+                            event</button></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="toast"></div>
+        <div id="toast"></div>
 
-    <script>
-        // ====== CONFIG — use the same URL and key as in checkin.html ======
-        const CONFIG = {
-            FUNCTIONS_URL: "https://ryfryacxmrzuslazrtme.supabase.co/functions/v1",
-            ANON_KEY: "PASTE-THE-SAME-KEY-YOU-USED-IN-checkin.html",
-            ADMIN_FUNCTION: "admin",     // name of the admin Edge Function
-            LOGO_SRC: "LOGOPMTG.png",    // logo file next to this page (printed on the PDF)
-        };
-        // ==================================================================
+        <script>
+            // ====== CONFIG — use the same URL and key as in checkin.html ======
+            const CONFIG = {
+                FUNCTIONS_URL: "https://ryfryacxmrzuslazrtme.supabase.co/functions/v1",
+                ANON_KEY: "PASTE-THE-SAME-KEY-YOU-USED-IN-checkin.html",
+                ADMIN_FUNCTION: "admin",     // name of the admin Edge Function
+                LOGO_SRC: "LOGOPMTG.png",    // logo file next to this page (printed on the PDF)
+            };
+            // ==================================================================
 
-        const $ = (id) => document.getElementById(id);
+            const $ = (id) => document.getElementById(id);
 
-        let PIN = null;          // kept in memory only, so refreshing the page locks it again
-        let events = [];
-        let selectedId = null;
-        let pdfTitleFor = null;
-        let records = [];
+            let PIN = null;          // kept in memory only, so refreshing the page locks it again
+            let events = [];
+            let selectedId = null;
+            let pdfTitleFor = null;
+            let records = [];
 
-        function toast(msg, isError) {
-            const t = $("toast");
-            t.textContent = msg;
-            t.className = "show" + (isError ? " error" : "");
-            clearTimeout(toast._t);
-            toast._t = setTimeout(() => { t.className = ""; }, 3500);
-        }
-
-        async function api(action, params) {
-            const res = await fetch(`${CONFIG.FUNCTIONS_URL}/${CONFIG.ADMIN_FUNCTION}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": CONFIG.ANON_KEY,
-                    "Authorization": `Bearer ${CONFIG.ANON_KEY}`,
-                },
-                body: JSON.stringify(Object.assign({ pin: PIN, action }, params || {})),
-            });
-            let data = {};
-            try { data = await res.json(); } catch (_) { }
-            if (!res.ok) throw new Error(data.error || data.message || `Request failed (${res.status})`);
-            return data;
-        }
-
-        // ---------------------------------------------------------------
-        // PDF helpers
-        // ---------------------------------------------------------------
-        // <PDF-START>
-        const KL = "Asia/Kuala_Lumpur";
-
-        function fmtDate(d) {
-            if (!d) return "";
-            const [y, m, day] = String(d).split("-").map(Number);
-            return new Date(Date.UTC(y, m - 1, day)).toLocaleDateString("en-GB", {
-                day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
-            });
-        }
-
-        function fmtTime(iso) {
-            return new Date(iso).toLocaleTimeString("en-GB", {
-                timeZone: KL, hour: "2-digit", minute: "2-digit", hour12: true,
-            }).toUpperCase();
-        }
-
-        function slug(s) {
-            return String(s).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "attendance";
-        }
-
-        // Draws the whole PDF onto `doc`: logo (centered), event name, date/total, then the table
-        function buildPdf(doc, ev, title, rows, logo) {
-            const pageW = doc.internal.pageSize.getWidth();
-            const pageH = doc.internal.pageSize.getHeight();
-            const M = 14;
-            let y = 12;
-
-            // Logo, centered at the top
-            if (logo) {
-                let h = 26;
-                let w = (logo.w / logo.h) * h;
-                if (w > 70) { w = 70; h = (logo.h / logo.w) * w; }
-                doc.addImage(logo.dataUrl, "PNG", (pageW - w) / 2, y, w, h);
-                y += h + 7;
-            } else {
-                y += 4;
+            function toast(msg, isError) {
+                const t = $("toast");
+                t.textContent = msg;
+                t.className = "show" + (isError ? " error" : "");
+                clearTimeout(toast._t);
+                toast._t = setTimeout(() => { t.className = ""; }, 3500);
             }
 
-            // Event name (wraps if long)
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(16);
-            doc.setTextColor(11, 30, 58);
-            const titleLines = doc.splitTextToSize(title.toUpperCase(), pageW - 2 * M);
-            doc.text(titleLines, pageW / 2, y, { align: "center" });
-            y += titleLines.length * 7;
-
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(11);
-            doc.setTextColor(90, 98, 115);
-            doc.text("ATTENDANCE LIST", pageW / 2, y, { align: "center" });
-            y += 6;
-            doc.setFontSize(10);
-            doc.text(`${fmtDate(ev.event_date)}   |   Total attendance: ${rows.length}`, pageW / 2, y, { align: "center" });
-            y += 4;
-
-            doc.setDrawColor(255, 204, 0);
-            doc.setLineWidth(0.8);
-            doc.line(M, y, pageW - M, y);
-            y += 5;
-
-            // Table (auto-paginates, repeats the header on every page)
-            doc.autoTable({
-                startY: y,
-                head: [["No.", "Full Name", "Class", "Matric Number", "Time"]],
-                body: rows.map((r, i) => [i + 1, r.full_name, r.class, r.matric_no, fmtTime(r.checked_in_at)]),
-                theme: "grid",
-                margin: { left: M, right: M, top: 16, bottom: 18 },
-                styles: {
-                    font: "helvetica", fontSize: 9, cellPadding: 2.2, valign: "middle",
-                    lineColor: [220, 224, 233], lineWidth: 0.2, textColor: [30, 35, 50],
-                },
-                headStyles: { fillColor: [11, 30, 58], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
-                alternateRowStyles: { fillColor: [245, 247, 251] },
-                columnStyles: {
-                    0: { halign: "center", cellWidth: 12 },
-                    2: { halign: "center", cellWidth: 26 },
-                    3: { halign: "center", cellWidth: 38 },
-                    4: { halign: "center", cellWidth: 22 },
-                },
-            });
-
-            // Footer on every page
-            const total = doc.getNumberOfPages();
-            const stamp = new Date().toLocaleString("en-GB", {
-                timeZone: KL, day: "2-digit", month: "short", year: "numeric",
-                hour: "2-digit", minute: "2-digit", hour12: true,
-            });
-            for (let p = 1; p <= total; p++) {
-                doc.setPage(p);
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(8);
-                doc.setTextColor(130, 138, 155);
-                doc.text(`Generated ${stamp}`, M, pageH - 8);
-                doc.text(`Page ${p} of ${total}`, pageW - M, pageH - 8, { align: "right" });
+            async function api(action, params) {
+                const res = await fetch(`${CONFIG.FUNCTIONS_URL}/${CONFIG.ADMIN_FUNCTION}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": CONFIG.ANON_KEY,
+                        "Authorization": `Bearer ${CONFIG.ANON_KEY}`,
+                    },
+                    body: JSON.stringify(Object.assign({ pin: PIN, action }, params || {})),
+                });
+                let data = {};
+                try { data = await res.json(); } catch (_) { }
+                if (!res.ok) throw new Error(data.error || data.message || `Request failed (${res.status})`);
+                return data;
             }
-        }
-        // <PDF-END>
 
-        function loadImage(src) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const c = document.createElement("canvas");
-                    c.width = img.naturalWidth;
-                    c.height = img.naturalHeight;
-                    c.getContext("2d").drawImage(img, 0, 0);
-                    resolve({ dataUrl: c.toDataURL("image/png"), w: img.naturalWidth, h: img.naturalHeight });
-                };
-                img.onerror = reject;
-                img.src = src;
-            });
-        }
+            // ---------------------------------------------------------------
+            // PDF helpers
+            // ---------------------------------------------------------------
+            // <PDF-START>
+            const KL = "Asia/Kuala_Lumpur";
 
-        async function exportPDF() {
-            const ev = currentEvent();
-            if (!ev) return;
-            const btn = $("exportBtn");
-            btn.disabled = true;
-            btn.textContent = "Preparing...";
-            try {
-                // Fetch the latest records so the PDF always has everyone
-                const data = await api("get_attendance", { event_id: ev.id });
-                const rows = data.records.slice();
-                if (!rows.length) { toast("No attendance records to export yet", true); return; }
+            function fmtDate(d) {
+                if (!d) return "";
+                const [y, m, day] = String(d).split("-").map(Number);
+                return new Date(Date.UTC(y, m - 1, day)).toLocaleDateString("en-GB", {
+                    day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
+                });
+            }
 
-                if ($("sortBy").value === "class") {
-                    rows.sort((a, b) =>
-                        a.class.localeCompare(b.class, "en", { numeric: true }) ||
-                        a.full_name.localeCompare(b.full_name, "en"));
+            function fmtTime(iso) {
+                return new Date(iso).toLocaleTimeString("en-GB", {
+                    timeZone: KL, hour: "2-digit", minute: "2-digit", hour12: true,
+                }).toUpperCase();
+            }
+
+            function slug(s) {
+                return String(s).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "attendance";
+            }
+
+            // Draws the whole PDF onto `doc`: logo (centered), event name, date/total, then the table
+            function buildPdf(doc, ev, title, rows, logo) {
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const M = 14;
+                let y = 12;
+
+                // Logo, centered at the top
+                if (logo) {
+                    let h = 26;
+                    let w = (logo.w / logo.h) * h;
+                    if (w > 70) { w = 70; h = (logo.h / logo.w) * w; }
+                    doc.addImage(logo.dataUrl, "PNG", (pageW - w) / 2, y, w, h);
+                    y += h + 7;
+                } else {
+                    y += 4;
                 }
 
-                const title = $("pdfTitle").value.trim() || ev.name;
-                let logo = null;
-                try { logo = await loadImage(CONFIG.LOGO_SRC); } catch (_) { /* PDF still works without the logo */ }
+                // Event name (wraps if long)
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.setTextColor(11, 30, 58);
+                const titleLines = doc.splitTextToSize(title.toUpperCase(), pageW - 2 * M);
+                doc.text(titleLines, pageW / 2, y, { align: "center" });
+                y += titleLines.length * 7;
 
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-                buildPdf(doc, ev, title, rows, logo);
-                doc.save(`${slug(title)}_attendance.pdf`);
-                toast("PDF downloaded");
-            } catch (err) {
-                toast(err.message || "Could not create the PDF", true);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = "Download PDF";
-            }
-        }
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(11);
+                doc.setTextColor(90, 98, 115);
+                doc.text("ATTENDANCE LIST", pageW / 2, y, { align: "center" });
+                y += 6;
+                doc.setFontSize(10);
+                doc.text(`${fmtDate(ev.event_date)}   |   Total attendance: ${rows.length}`, pageW / 2, y, { align: "center" });
+                y += 4;
 
-        // ---------------------------------------------------------------
-        // Lock screen
-        // ---------------------------------------------------------------
-        $("pinInput").addEventListener("input", (e) => {
-            e.target.value = e.target.value.replace(/\D/g, "");
-            if (e.target.value.length === 4) tryLogin(e.target.value);
-        });
+                doc.setDrawColor(255, 204, 0);
+                doc.setLineWidth(0.8);
+                doc.line(M, y, pageW - M, y);
+                y += 5;
 
-        async function tryLogin(code) {
-            const input = $("pinInput");
-            input.disabled = true;
-            $("lockMsg").textContent = "";
-            PIN = code;
-            try {
-                await api("login");
-            } catch (err) {
-                PIN = null;
-                $("lockMsg").textContent = err.message;
-                input.value = "";
-                input.classList.remove("shake");
-                void input.offsetWidth;
-                input.classList.add("shake");
-                input.disabled = false;
-                input.focus();
-                return;
-            }
-            input.disabled = false;
-            input.value = "";
-            $("lock").classList.add("hidden");
-            $("app").classList.remove("hidden");
-            try { await loadEvents(); } catch (err) { toast(err.message, true); }
-        }
-
-        $("logoutBtn").addEventListener("click", () => {
-            PIN = null;
-            events = []; records = []; selectedId = null; pdfTitleFor = null;
-            $("tbody").textContent = "";
-            $("app").classList.add("hidden");
-            $("lock").classList.remove("hidden");
-            $("pinInput").focus();
-        });
-
-        // ---------------------------------------------------------------
-        // Events + attendance
-        // ---------------------------------------------------------------
-        function currentEvent() { return events.find((e) => e.id === selectedId); }
-
-        async function loadEvents() {
-            const data = await api("list_events");
-            events = data.events;
-
-            const sel = $("eventSelect");
-            sel.textContent = "";
-            events.forEach((ev) => {
-                const o = document.createElement("option");
-                o.value = ev.id;
-                o.textContent = `${ev.is_active ? "● LIVE — " : ""}${ev.name} (${ev.count})`;
-                sel.appendChild(o);
-            });
-
-            if (!events.some((e) => e.id === selectedId)) {
-                const live = events.find((e) => e.is_active);
-                selectedId = (live || events[0] || {}).id || null;
-            }
-            sel.value = selectedId || "";
-            syncEventUI();
-            await loadRecords();
-        }
-
-        function syncEventUI() {
-            const ev = currentEvent();
-            if (pdfTitleFor !== selectedId) {
-                $("pdfTitle").value = ev ? ev.name : "";
-                pdfTitleFor = selectedId;
-            }
-            $("makeLiveBtn").classList.toggle("hidden", !ev || ev.is_active);
-            ["exportBtn", "resetBtn", "addBtn"].forEach((id) => { $(id).disabled = !ev; });
-
-            const stats = $("stats");
-            stats.textContent = "";
-            if (!ev) {
-                stats.textContent = "No events yet. Create one below.";
-                return;
-            }
-            stats.append(`${ev.count} checked in  |  ${fmtDate(ev.event_date)}`);
-            if (ev.is_active) {
-                const b = document.createElement("span");
-                b.className = "live";
-                b.textContent = "LIVE - the QR is using this event";
-                stats.append(b);
-            }
-        }
-
-        async function loadRecords() {
-            if (!selectedId) { records = []; renderTable(); return; }
-            const data = await api("get_attendance", { event_id: selectedId });
-            records = data.records;
-            renderTable();
-        }
-
-        function renderTable() {
-            const q = $("search").value.trim().toUpperCase();
-            const body = $("tbody");
-            body.textContent = "";
-
-            const list = records.filter((r) =>
-                !q || `${r.full_name} ${r.class} ${r.matric_no}`.toUpperCase().includes(q));
-            $("countLabel").textContent = `- ${records.length} checked in` + (q ? ` (${list.length} shown)` : "");
-
-            if (!list.length) {
-                const tr = document.createElement("tr");
-                const td = document.createElement("td");
-                td.colSpan = 7;
-                td.className = "empty";
-                td.textContent = records.length ? "No matches" : "No attendance yet";
-                tr.appendChild(td);
-                body.appendChild(tr);
-                return;
-            }
-
-            list.forEach((r, i) => {
-                const tr = document.createElement("tr");
-                [String(i + 1), r.full_name, r.class, r.matric_no, fmtTime(r.checked_in_at)].forEach((text) => {
-                    const td = document.createElement("td");
-                    td.textContent = text;      // textContent, so a student can't inject HTML into this page
-                    tr.appendChild(td);
+                // Table (auto-paginates, repeats the header on every page)
+                doc.autoTable({
+                    startY: y,
+                    head: [["No.", "Full Name", "Class", "Matric Number", "Time"]],
+                    body: rows.map((r, i) => [i + 1, r.full_name, r.class, r.matric_no, fmtTime(r.checked_in_at)]),
+                    theme: "grid",
+                    margin: { left: M, right: M, top: 16, bottom: 18 },
+                    styles: {
+                        font: "helvetica", fontSize: 9, cellPadding: 2.2, valign: "middle",
+                        lineColor: [220, 224, 233], lineWidth: 0.2, textColor: [30, 35, 50],
+                    },
+                    headStyles: { fillColor: [11, 30, 58], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
+                    alternateRowStyles: { fillColor: [245, 247, 251] },
+                    columnStyles: {
+                        0: { halign: "center", cellWidth: 12 },
+                        2: { halign: "center", cellWidth: 26 },
+                        3: { halign: "center", cellWidth: 38 },
+                        4: { halign: "center", cellWidth: 22 },
+                    },
                 });
 
-                const tdVia = document.createElement("td");
-                const badge = document.createElement("span");
-                const manual = r.method === "admin_manual";
-                badge.className = "badge " + (manual ? "manual" : "qr");
-                badge.textContent = manual ? "MANUAL" : "QR";
-                tdVia.appendChild(badge);
-                tr.appendChild(tdVia);
+                // Footer on every page
+                const total = doc.getNumberOfPages();
+                const stamp = new Date().toLocaleString("en-GB", {
+                    timeZone: KL, day: "2-digit", month: "short", year: "numeric",
+                    hour: "2-digit", minute: "2-digit", hour12: true,
+                });
+                for (let p = 1; p <= total; p++) {
+                    doc.setPage(p);
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    doc.setTextColor(130, 138, 155);
+                    doc.text(`Generated ${stamp}`, M, pageH - 8);
+                    doc.text(`Page ${p} of ${total}`, pageW - M, pageH - 8, { align: "right" });
+                }
+            }
+            // <PDF-END>
 
-                const tdDel = document.createElement("td");
-                const x = document.createElement("button");
-                x.className = "del";
-                x.textContent = "✕";
-                x.title = "Delete this record";
-                x.addEventListener("click", () => deleteRecord(r));
-                tdDel.appendChild(x);
-                tr.appendChild(tdDel);
+            function loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const c = document.createElement("canvas");
+                        c.width = img.naturalWidth;
+                        c.height = img.naturalHeight;
+                        c.getContext("2d").drawImage(img, 0, 0);
+                        resolve({ dataUrl: c.toDataURL("image/png"), w: img.naturalWidth, h: img.naturalHeight });
+                    };
+                    img.onerror = reject;
+                    img.src = src;
+                });
+            }
 
-                body.appendChild(tr);
+            async function exportPDF() {
+                const ev = currentEvent();
+                if (!ev) return;
+                const btn = $("exportBtn");
+                btn.disabled = true;
+                btn.textContent = "Preparing...";
+                try {
+                    // Fetch the latest records so the PDF always has everyone
+                    const data = await api("get_attendance", { event_id: ev.id });
+                    const rows = data.records.slice();
+                    if (!rows.length) { toast("No attendance records to export yet", true); return; }
+
+                    if ($("sortBy").value === "class") {
+                        rows.sort((a, b) =>
+                            a.class.localeCompare(b.class, "en", { numeric: true }) ||
+                            a.full_name.localeCompare(b.full_name, "en"));
+                    }
+
+                    const title = $("pdfTitle").value.trim() || ev.name;
+                    let logo = null;
+                    try { logo = await loadImage(CONFIG.LOGO_SRC); } catch (_) { /* PDF still works without the logo */ }
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+                    buildPdf(doc, ev, title, rows, logo);
+                    doc.save(`${slug(title)}_attendance.pdf`);
+                    toast("PDF downloaded");
+                } catch (err) {
+                    toast(err.message || "Could not create the PDF", true);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = "Download PDF";
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // Lock screen
+            // ---------------------------------------------------------------
+            $("pinInput").addEventListener("input", (e) => {
+                e.target.value = e.target.value.replace(/\D/g, "");
+                if (e.target.value.length === 4) tryLogin(e.target.value);
             });
-        }
 
-        async function deleteRecord(r) {
-            if (!confirm(`Delete the record for ${r.full_name} (${r.matric_no})?`)) return;
-            try {
-                await api("delete_record", { id: r.id });
-                toast("Record deleted");
-                await loadEvents();
-            } catch (err) { toast(err.message, true); }
-        }
+            async function tryLogin(code) {
+                const input = $("pinInput");
+                input.disabled = true;
+                $("lockMsg").textContent = "";
+                PIN = code;
+                try {
+                    await api("login");
+                } catch (err) {
+                    PIN = null;
+                    $("lockMsg").textContent = err.message;
+                    input.value = "";
+                    input.classList.remove("shake");
+                    void input.offsetWidth;
+                    input.classList.add("shake");
+                    input.disabled = false;
+                    input.focus();
+                    return;
+                }
+                input.disabled = false;
+                input.value = "";
+                $("lock").classList.add("hidden");
+                $("app").classList.remove("hidden");
+                try { await loadEvents(); } catch (err) { toast(err.message, true); }
+            }
 
-        // ---------------------------------------------------------------
-        // Buttons
-        // ---------------------------------------------------------------
-        $("eventSelect").addEventListener("change", async (e) => {
-            selectedId = e.target.value;
-            syncEventUI();
-            try { await loadRecords(); } catch (err) { toast(err.message, true); }
-        });
-
-        $("search").addEventListener("input", renderTable);
-
-        $("refreshBtn").addEventListener("click", async () => {
-            try { await loadEvents(); toast("Refreshed"); } catch (err) { toast(err.message, true); }
-        });
-
-        $("exportBtn").addEventListener("click", exportPDF);
-
-        ["mName", "mClass", "mMatric"].forEach((id) => {
-            const el = $(id);
-            el.addEventListener("input", () => {
-                const pos = el.selectionStart;
-                el.value = el.value.toUpperCase();
-                el.setSelectionRange(pos, pos);
+            $("logoutBtn").addEventListener("click", () => {
+                PIN = null;
+                events = []; records = []; selectedId = null; pdfTitleFor = null;
+                $("tbody").textContent = "";
+                $("app").classList.add("hidden");
+                $("lock").classList.remove("hidden");
+                $("pinInput").focus();
             });
-        });
 
-        $("addBtn").addEventListener("click", async () => {
-            const full_name = $("mName").value.trim();
-            const cls = $("mClass").value.trim();
-            const matric_no = $("mMatric").value.trim();
-            if (!full_name || !cls || !matric_no) return toast("Fill in name, class and matric number", true);
-            try {
-                await api("manual_add", { event_id: selectedId, full_name, class: cls, matric_no });
-                ["mName", "mClass", "mMatric"].forEach((id) => { $(id).value = ""; });
-                toast("Attendance added");
-                await loadEvents();
-                $("mName").focus();
-            } catch (err) { toast(err.message, true); }
-        });
+            // ---------------------------------------------------------------
+            // Events + attendance
+            // ---------------------------------------------------------------
+            function currentEvent() { return events.find((e) => e.id === selectedId); }
 
-        $("makeLiveBtn").addEventListener("click", async () => {
-            const ev = currentEvent();
-            if (!ev) return;
-            if (!confirm(`Make "${ev.name}" the live event?\n\nThe QR code will switch to it and students can no longer check in to the previous one.`)) return;
-            try {
-                await api("set_active", { event_id: ev.id });
-                toast("Event is now live");
-                await loadEvents();
-            } catch (err) { toast(err.message, true); }
-        });
+            async function loadEvents() {
+                const data = await api("list_events");
+                events = data.events;
 
-        $("createBtn").addEventListener("click", async () => {
-            const name = $("newEventName").value.trim();
-            if (!name) return toast("Enter a name for the new event", true);
-            if (!confirm(`Create "${name}" and make it the live event?\n\nThe QR code will switch to it and students can no longer check in to the previous one.`)) return;
-            try {
-                const data = await api("create_event", { name });
-                $("newEventName").value = "";
-                selectedId = data.event.id;
-                toast("New event created and live");
-                await loadEvents();
-            } catch (err) { toast(err.message, true); }
-        });
+                const sel = $("eventSelect");
+                sel.textContent = "";
+                events.forEach((ev) => {
+                    const o = document.createElement("option");
+                    o.value = ev.id;
+                    o.textContent = `${ev.is_active ? "● LIVE — " : ""}${ev.name} (${ev.count})`;
+                    sel.appendChild(o);
+                });
 
-        $("resetBtn").addEventListener("click", async () => {
-            const ev = currentEvent();
-            if (!ev) return;
-            const answer = prompt(`This permanently deletes all ${ev.count} attendance records for "${ev.name}".\n\nExport the PDF first if you need a copy.\n\nType RESET to confirm.`);
-            if (answer !== "RESET") return;
-            try {
-                await api("reset_event", { event_id: ev.id });
-                toast("Attendance reset");
-                await loadEvents();
-            } catch (err) { toast(err.message, true); }
-        });
-    </script>
+                if (!events.some((e) => e.id === selectedId)) {
+                    const live = events.find((e) => e.is_active);
+                    selectedId = (live || events[0] || {}).id || null;
+                }
+                sel.value = selectedId || "";
+                syncEventUI();
+                await loadRecords();
+            }
+
+            function syncEventUI() {
+                const ev = currentEvent();
+                if (pdfTitleFor !== selectedId) {
+                    $("pdfTitle").value = ev ? ev.name : "";
+                    pdfTitleFor = selectedId;
+                }
+                $("makeLiveBtn").classList.toggle("hidden", !ev || ev.is_active);
+                ["exportBtn", "resetBtn", "addBtn", "saveVenueBtn"].forEach((id) => { $(id).disabled = !ev; });
+
+                $("venueLat").value = ev && ev.venue_lat != null ? ev.venue_lat : "";
+                $("venueLng").value = ev && ev.venue_lng != null ? ev.venue_lng : "";
+                $("venueRadius").value = ev && ev.geofence_radius_m != null ? ev.geofence_radius_m : "";
+                $("venueNote").textContent = "";
+
+                const stats = $("stats");
+                stats.textContent = "";
+                if (!ev) {
+                    stats.textContent = "No events yet. Create one below.";
+                    return;
+                }
+                stats.append(`${ev.count} checked in  |  ${fmtDate(ev.event_date)}`);
+                if (ev.is_active) {
+                    const b = document.createElement("span");
+                    b.className = "live";
+                    b.textContent = "LIVE - the QR is using this event";
+                    stats.append(b);
+                }
+            }
+
+            async function loadRecords() {
+                if (!selectedId) { records = []; renderTable(); return; }
+                const data = await api("get_attendance", { event_id: selectedId });
+                records = data.records;
+                renderTable();
+            }
+
+            function renderTable() {
+                const q = $("search").value.trim().toUpperCase();
+                const body = $("tbody");
+                body.textContent = "";
+
+                const list = records.filter((r) =>
+                    !q || `${r.full_name} ${r.class} ${r.matric_no}`.toUpperCase().includes(q));
+                $("countLabel").textContent = `- ${records.length} checked in` + (q ? ` (${list.length} shown)` : "");
+
+                if (!list.length) {
+                    const tr = document.createElement("tr");
+                    const td = document.createElement("td");
+                    td.colSpan = 7;
+                    td.className = "empty";
+                    td.textContent = records.length ? "No matches" : "No attendance yet";
+                    tr.appendChild(td);
+                    body.appendChild(tr);
+                    return;
+                }
+
+                list.forEach((r, i) => {
+                    const tr = document.createElement("tr");
+                    [String(i + 1), r.full_name, r.class, r.matric_no, fmtTime(r.checked_in_at)].forEach((text) => {
+                        const td = document.createElement("td");
+                        td.textContent = text;      // textContent, so a student can't inject HTML into this page
+                        tr.appendChild(td);
+                    });
+
+                    const tdVia = document.createElement("td");
+                    const badge = document.createElement("span");
+                    const manual = r.method === "admin_manual";
+                    badge.className = "badge " + (manual ? "manual" : "qr");
+                    badge.textContent = manual ? "MANUAL" : "QR";
+                    tdVia.appendChild(badge);
+                    tr.appendChild(tdVia);
+
+                    const tdDel = document.createElement("td");
+                    const x = document.createElement("button");
+                    x.className = "del";
+                    x.textContent = "✕";
+                    x.title = "Delete this record";
+                    x.addEventListener("click", () => deleteRecord(r));
+                    tdDel.appendChild(x);
+                    tr.appendChild(tdDel);
+
+                    body.appendChild(tr);
+                });
+            }
+
+            async function deleteRecord(r) {
+                if (!confirm(`Delete the record for ${r.full_name} (${r.matric_no})?`)) return;
+                try {
+                    await api("delete_record", { id: r.id });
+                    toast("Record deleted");
+                    await loadEvents();
+                } catch (err) { toast(err.message, true); }
+            }
+
+            // ---------------------------------------------------------------
+            // Buttons
+            // ---------------------------------------------------------------
+            $("eventSelect").addEventListener("change", async (e) => {
+                selectedId = e.target.value;
+                syncEventUI();
+                try { await loadRecords(); } catch (err) { toast(err.message, true); }
+            });
+
+            $("search").addEventListener("input", renderTable);
+
+            $("refreshBtn").addEventListener("click", async () => {
+                try { await loadEvents(); toast("Refreshed"); } catch (err) { toast(err.message, true); }
+            });
+
+            $("exportBtn").addEventListener("click", exportPDF);
+
+            ["mName", "mClass", "mMatric"].forEach((id) => {
+                const el = $(id);
+                el.addEventListener("input", () => {
+                    const pos = el.selectionStart;
+                    el.value = el.value.toUpperCase();
+                    el.setSelectionRange(pos, pos);
+                });
+            });
+
+            $("addBtn").addEventListener("click", async () => {
+                const full_name = $("mName").value.trim();
+                const cls = $("mClass").value.trim();
+                const matric_no = $("mMatric").value.trim();
+                if (!full_name || !cls || !matric_no) return toast("Fill in name, class and matric number", true);
+                try {
+                    await api("manual_add", { event_id: selectedId, full_name, class: cls, matric_no });
+                    ["mName", "mClass", "mMatric"].forEach((id) => { $(id).value = ""; });
+                    toast("Attendance added");
+                    await loadEvents();
+                    $("mName").focus();
+                } catch (err) { toast(err.message, true); }
+            });
+
+            $("useLocationBtn").addEventListener("click", () => {
+                if (!navigator.geolocation) return toast("Location is not supported on this device/browser", true);
+                const btn = $("useLocationBtn");
+                btn.disabled = true;
+                btn.textContent = "Locating...";
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        $("venueLat").value = pos.coords.latitude.toFixed(7);
+                        $("venueLng").value = pos.coords.longitude.toFixed(7);
+                        $("venueNote").textContent = "Location filled in — click Save venue to apply it";
+                        btn.disabled = false;
+                        btn.textContent = "Use my current location";
+                    },
+                    (err) => {
+                        toast("Could not get your location: " + err.message, true);
+                        btn.disabled = false;
+                        btn.textContent = "Use my current location";
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+
+            $("saveVenueBtn").addEventListener("click", async () => {
+                const ev = currentEvent();
+                if (!ev) return;
+                const venue_lat = parseFloat($("venueLat").value);
+                const venue_lng = parseFloat($("venueLng").value);
+                const geofence_radius_m = parseInt($("venueRadius").value, 10);
+                if (!Number.isFinite(venue_lat) || !Number.isFinite(venue_lng)) {
+                    return toast("Enter a valid latitude and longitude", true);
+                }
+                if (!Number.isFinite(geofence_radius_m) || geofence_radius_m < 10) {
+                    return toast("Enter a radius of at least 10 meters", true);
+                }
+                const btn = $("saveVenueBtn");
+                btn.disabled = true;
+                try {
+                    await api("update_venue", { event_id: ev.id, venue_lat, venue_lng, geofence_radius_m });
+                    toast("Venue updated");
+                    $("venueNote").textContent = "";
+                    await loadEvents();
+                } catch (err) {
+                    toast(err.message, true);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+
+            $("makeLiveBtn").addEventListener("click", async () => {
+                const ev = currentEvent();
+                if (!ev) return;
+                if (!confirm(`Make "${ev.name}" the live event?\n\nThe QR code will switch to it and students can no longer check in to the previous one.`)) return;
+                try {
+                    await api("set_active", { event_id: ev.id });
+                    toast("Event is now live");
+                    await loadEvents();
+                } catch (err) { toast(err.message, true); }
+            });
+
+            $("createBtn").addEventListener("click", async () => {
+                const name = $("newEventName").value.trim();
+                if (!name) return toast("Enter a name for the new event", true);
+                if (!confirm(`Create "${name}" and make it the live event?\n\nThe QR code will switch to it and students can no longer check in to the previous one.`)) return;
+                try {
+                    const data = await api("create_event", { name });
+                    $("newEventName").value = "";
+                    selectedId = data.event.id;
+                    toast("New event created and live");
+                    await loadEvents();
+                } catch (err) { toast(err.message, true); }
+            });
+
+            $("resetBtn").addEventListener("click", async () => {
+                const ev = currentEvent();
+                if (!ev) return;
+                const answer = prompt(`This permanently deletes all ${ev.count} attendance records for "${ev.name}".\n\nExport the PDF first if you need a copy.\n\nType RESET to confirm.`);
+                if (answer !== "RESET") return;
+                try {
+                    await api("reset_event", { event_id: ev.id });
+                    toast("Attendance reset");
+                    await loadEvents();
+                } catch (err) { toast(err.message, true); }
+            });
+        </script>
 </body>
 
 </html>

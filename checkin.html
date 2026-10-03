@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PMTG Attendance Check-In</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <style>
     :root {
       --bg: #0b1e3a;
@@ -43,7 +46,7 @@
     }
 
     .logos img {
-      height: 40px;
+      height: 48px;
     }
 
     h1 {
@@ -80,6 +83,10 @@
 
     input:focus {
       border-color: var(--accent);
+    }
+
+    input:disabled {
+      background: #f3f4f7;
     }
 
     button {
@@ -133,50 +140,47 @@
 <body>
 
   <div class="card">
-    <div class="logos">
-      <!-- <img src="LOGOPMTG.png" alt="PMTG logo"> -->
-    </div>
+    <div class="logos"><img src="LOGOPMTG.png" alt="JPP Politeknik METrO Tasek Gelugor"
+        onerror="this.style.display='none'"></div>
     <h1>HARI SUKAN NEGARA PMTG 2026</h1>
-    <p class="sub">Attendance Check-In</p>
+    <p class="sub" id="eventLabel">Attendance Check-In</p>
 
     <form id="checkinForm">
       <label for="fullName">Full Name</label>
-      <input type="text" id="fullName" placeholder="JOHN A/L DOE" required>
+      <input type="text" id="fullName" placeholder="ERMAAN SINGH A/L DALBEER SINGH" required disabled>
 
       <label for="className">Class</label>
-      <input type="text" id="className" placeholder="DIT3B" required>
+      <input type="text" id="className" placeholder="DIT3B" required disabled>
 
-      <label for="matricNo">Matrix Number</label>
-      <input type="text" id="matricNo" placeholder="32DIT27F1000" required>
+      <label for="matricNo">Matric Number</label>
+      <input type="text" id="matricNo" placeholder="32DIT25F1025" required disabled>
 
-      <button type="submit" id="submitBtn">Mark Attendance</button>
-      <div class="gps-note" id="gpsNote">Getting your location...</div>
+      <button type="submit" id="submitBtn" disabled>Loading...</button>
+      <div class="gps-note" id="gpsNote">Finding the active session...</div>
     </form>
 
     <div class="msg" id="msg"></div>
   </div>
 
   <script>
-    // ====== CONFIG ======
-    const SUPABASE_FUNCTIONS_URL = "https://ryfryacxmrzuslazrtme.supabase.co/functions/v1/";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5ZnJ5YWN4bXJ6dXNsYXpydG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDg2NjcsImV4cCI6MjEwNjA4NDY2N30.-oIe-b7xwrd-19VPiggvM20RR14mTAQ0gw_Kl990Ko8";
-    // =============================================
-
-    const params = new URLSearchParams(window.location.search);
-    const eventId = params.get("event_id");
-    const token = params.get("token");
+    // ====== CONFIG — edit these lines ======
+    const SUPABASE_FUNCTIONS_URL = "https://ryfryacxmrzuslazrtme.supabase.co/functions/v1";
+    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY";
+    const ACTIVE_EVENT_FUNCTION = "super-responder"; // the function that reports who's live
+    // ==========================================
 
     const form = document.getElementById("checkinForm");
     const submitBtn = document.getElementById("submitBtn");
     const msg = document.getElementById("msg");
     const gpsNote = document.getElementById("gpsNote");
+    const eventLabel = document.getElementById("eventLabel");
+    const fields = ["fullName", "className", "matricNo"].map((id) => document.getElementById(id));
 
+    let eventId = null;
     let gpsLat = null;
     let gpsLng = null;
 
-    // Force-capitalize as the student types, so what they see matches what's stored
-    ["fullName", "className", "matricNo"].forEach((id) => {
-      const el = document.getElementById(id);
+    fields.forEach((el) => {
       el.addEventListener("input", () => {
         const pos = el.selectionStart;
         el.value = el.value.toUpperCase();
@@ -189,28 +193,58 @@
       msg.className = `msg ${type}`;
     }
 
-    if (!eventId || !token) {
-      showMsg("Invalid check-in link. Please scan the QR code on screen again.", "error");
-      submitBtn.disabled = true;
-      gpsNote.textContent = "";
-    } else if (!navigator.geolocation) {
-      gpsNote.textContent = "Location is not supported on this device/browser.";
-    } else {
+    function enableForm() {
+      fields.forEach((el) => { el.disabled = false; });
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Mark Attendance";
+    }
+
+    async function loadActiveEvent() {
+      try {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/${ACTIVE_EVENT_FUNCTION}`, {
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No attendance session is active right now");
+
+        eventId = data.event_id;
+        eventLabel.textContent = data.event_name;
+        enableForm();
+      } catch (err) {
+        showMsg(err.message, "error");
+        gpsNote.textContent = "";
+        submitBtn.textContent = "Unavailable";
+      }
+    }
+
+    function startLocation() {
+      if (!navigator.geolocation) {
+        gpsNote.textContent = "Location is not supported on this device/browser.";
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           gpsLat = pos.coords.latitude;
           gpsLng = pos.coords.longitude;
           gpsNote.textContent = "Location captured ✓";
         },
-        (err) => {
+        () => {
           gpsNote.textContent = "Could not get location — enable location access and reload.";
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
 
+    loadActiveEvent();
+    startLocation();
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (!eventId) return;
+
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting...";
       msg.className = "msg";
@@ -229,7 +263,6 @@
           },
           body: JSON.stringify({
             event_id: eventId,
-            token,
             full_name,
             class: className,
             matric_no,
@@ -238,8 +271,7 @@
           }),
         });
         const data = await res.json();
-
-        if (!res.ok) throw new Error(data.error || "Something went wrong");
+        if (!res.ok) throw new Error(data.error || data.message || "Something went wrong");
 
         showMsg("Attendance marked successfully! You may close this page.", "success");
         form.style.display = "none";

@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PMTG Hari Sukan Negara 2026 — Attendance QR</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
@@ -39,7 +42,10 @@
     }
 
     .logos img {
-      height: 56px;
+      height: 64px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px;
     }
 
     h1 {
@@ -67,34 +73,10 @@
       margin: 0 auto;
     }
 
-    .timer-wrap {
-      margin-top: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      color: #0b1e3a;
-      font-weight: 600;
-    }
-
-    .timer-bar {
-      width: 220px;
-      height: 8px;
-      background: #e5e5e5;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .timer-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 1s linear;
-    }
-
     .status {
       margin-top: 18px;
       font-size: 14px;
-      opacity: 0.8;
+      opacity: 0.85;
     }
 
     .status.error {
@@ -106,22 +88,14 @@
 <body>
 
   <div class="logos">
-    <!-- Drop your logo <img> tags here, e.g. -->
-    <!-- <img src="logo1.png" alt="Politeknik logo"> -->
-    <!-- <img src="logo2.png" alt="PMTG logo"> -->
+    <img src="LOGOPMTG.png" alt="JPP Politeknik METrO Tasek Gelugor" onerror="this.style.display='none'">
   </div>
 
   <h1>HARI SUKAN NEGARA PMTG 2026</h1>
-  <h2>Scan to mark attendance — this code refreshes every 15 seconds</h2>
+  <h2>Scan to mark attendance</h2>
 
   <div class="qr-card">
     <div id="qrcode"></div>
-    <div class="timer-wrap">
-      <span id="timerLabel">15s</span>
-      <div class="timer-bar">
-        <div class="timer-fill" id="timerFill" style="width:100%"></div>
-      </div>
-    </div>
   </div>
 
   <div class="status" id="status">Loading...</div>
@@ -129,75 +103,44 @@
   <script>
     // ====== CONFIG — edit these lines ======
     const SUPABASE_FUNCTIONS_URL = "https://ryfryacxmrzuslazrtme.supabase.co/functions/v1";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5ZnJ5YWN4bXJ6dXNsYXpydG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDg2NjcsImV4cCI6MjEwNjA4NDY2N30.-oIe-b7xwrd-19VPiggvM20RR14mTAQ0gw_Kl990Ko8";
-    const EVENT_ID = "d6d16272-aa4e-4c1b-b643-c68ee4f8af0f";
+    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY";
     const CHECKIN_PAGE_URL = "https://ermxxn.github.io/PMTG_Attendance_System/checkin.html";
+    const ACTIVE_EVENT_FUNCTION = "super-responder"; // the function that reports who's live
     // ==========================================
 
     const qrDiv = document.getElementById("qrcode");
     const statusDiv = document.getElementById("status");
-    const timerFill = document.getElementById("timerFill");
-    const timerLabel = document.getElementById("timerLabel");
 
-    let qr = null;
-    let countdownInterval = null;
+    // The QR itself never changes — it's just a fixed link to checkin.html.
+    // checkin.html looks up whichever event is live at the moment it's scanned.
+    new QRCode(qrDiv, {
+      text: CHECKIN_PAGE_URL,
+      width: 280,
+      height: 280,
+      colorDark: "#0b1e3a",
+      colorLight: "#ffffff",
+    });
 
-    async function refreshQR() {
+    async function refreshStatus() {
       try {
-        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/super-responder`, {
+        const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/${ACTIVE_EVENT_FUNCTION}`, {
           headers: {
             "apikey": SUPABASE_ANON_KEY,
             "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
           },
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to load QR");
-
-        const checkinUrl = `${CHECKIN_PAGE_URL}?event_id=${data.event_id}&token=${data.token}`;
-
-        if (!qr) {
-          qr = new QRCode(qrDiv, {
-            text: checkinUrl,
-            width: 280,
-            height: 280,
-            colorDark: "#0b1e3a",
-            colorLight: "#ffffff",
-          });
-        } else {
-          qr.clear();
-          qr.makeCode(checkinUrl);
-        }
-
-        statusDiv.textContent = "";
+        if (!res.ok) throw new Error(data.error || "No active event");
+        statusDiv.textContent = `Now checking in: ${data.event_name}`;
         statusDiv.classList.remove("error");
-        startCountdown(data.expires_in, data.time_step);
       } catch (err) {
-        statusDiv.textContent = "Could not refresh QR — " + err.message;
+        statusDiv.textContent = err.message;
         statusDiv.classList.add("error");
       }
     }
 
-    function startCountdown(seconds, totalStep) {
-      clearInterval(countdownInterval);
-      let remaining = seconds;
-      updateTimerUI(remaining, totalStep);
-      countdownInterval = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-          clearInterval(countdownInterval);
-          refreshQR();
-          return;
-        }
-        updateTimerUI(remaining, totalStep);
-      }, 1000);
-    }
-
-    function updateTimerUI(remaining, totalStep) {
-      timerLabel.textContent = remaining + "s";
-      timerFill.style.width = `${(remaining / totalStep) * 100}%`;
-    }
-
-    refreshQR();
+    refreshStatus();
+    setInterval(refreshStatus, 30000); // just refreshes the label, not the QR
   </script>
 </body>
 
