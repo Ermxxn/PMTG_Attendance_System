@@ -1,166 +1,421 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>PMTG Attendance Check-In</title>
+  <title>PMTG Attendance System</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
   <link rel="apple-touch-icon" href="favicon_io/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
   <style>
     :root {
-      --bg: #0b1e3a;
-      --accent: #ffcc00;
+      --red: #e21b23;
+      --ink: #14171f;
+      --mut: #667085;
+      --line: #dfe2e8;
+      --paper: #f4f5f7;
+      --ok: #17794a;
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-      background: linear-gradient(180deg, #0b1e3a, #163a70);
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      min-height: 100dvh;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      flex-direction: column;
+      background: var(--paper);
+      color: var(--ink);
+      font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    .card {
+    .h {
+      font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+      font-weight: 700;
+    }
+
+    header.hd {
+      background: #fff;
+      border-bottom: 3px solid var(--red);
+      padding: calc(12px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 12px max(20px, env(safe-area-inset-left, 0px));
+    }
+
+    header.hd img {
+      height: 42px;
+      display: block;
+    }
+
+    main {
+      flex: 1;
       width: 100%;
-      max-width: 420px;
-      background: white;
-      border-radius: 18px;
-      padding: 28px 24px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 22px 20px 8px;
     }
 
-    .logos {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 8px;
+    .panel[hidden],
+    [hidden] {
+      display: none !important;
     }
 
-    .logos img {
-      height: 48px;
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      padding: 6px 13px 6px 11px;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    .pill span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dot {
+      flex: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .dot.ok {
+      background: var(--ok);
+    }
+
+    .dot.bad {
+      background: var(--red);
+    }
+
+    .dot.wait {
+      background: #98a0ae;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .3;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dot.wait {
+        animation: none;
+      }
     }
 
     h1 {
-      font-size: 19px;
-      text-align: center;
-      color: #0b1e3a;
-      margin: 4px 0 2px;
+      margin: 14px 0 2px;
+      font-size: 30px;
+      line-height: 1.05;
+      text-transform: uppercase;
+      letter-spacing: .01em;
     }
 
-    p.sub {
-      text-align: center;
-      color: #666;
-      font-size: 13px;
-      margin: 0 0 20px;
+    h2 {
+      margin: 10px 0 2px;
+      font-size: 28px;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      margin: 0 0 6px;
+      color: var(--mut);
+      font-size: 13.5px;
     }
 
     label {
       display: block;
-      font-size: 13px;
+      margin: 16px 0 6px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: #0b1e3a;
-      margin: 14px 0 6px;
+    }
+
+    label i {
+      font-style: normal;
+      font-weight: 400;
+      color: var(--mut);
     }
 
     input {
       width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid #d8dce5;
-      border-radius: 10px;
-      font-size: 15px;
+      height: 50px;
+      padding: 0 14px;
+      background: #fff;
+      border: 1.5px solid #cfd4dc;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 16px;
       text-transform: uppercase;
+      color: var(--ink);
       outline: none;
     }
 
     input:focus {
-      border-color: var(--accent);
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(226, 27, 35, .18);
     }
 
     input:disabled {
-      background: #f3f4f7;
+      background: #eceef2;
+      color: #98a0ae;
     }
 
-    button {
-      width: 100%;
-      margin-top: 22px;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      background: var(--bg);
-      color: white;
-      font-size: 15px;
+    .loc {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--mut);
+    }
+
+    .loc .txt {
+      flex: 1 1 200px;
+    }
+
+    .retry {
+      border: 1.5px solid var(--ink);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font: inherit;
+      font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
     }
 
-    button:disabled {
-      opacity: 0.5;
+    .go {
+      width: 100%;
+      margin-top: 16px;
+      min-height: 56px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--red);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .go small {
+      font-size: 12.5px;
+      font-weight: 500;
+      opacity: .9;
+    }
+
+    .go:disabled {
+      background: #c9ccd3;
       cursor: not-allowed;
     }
 
-    .msg {
+    .go:focus-visible,
+    .retry:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .alert {
       margin-top: 16px;
+      background: #fdecee;
+      border: 1px solid #f4b8bc;
+      border-left: 4px solid var(--red);
+      border-radius: 8px;
       padding: 12px 14px;
-      border-radius: 10px;
       font-size: 14px;
-      text-align: center;
-      display: none;
     }
 
-    .msg.success {
-      background: #e6f8ec;
-      color: #187a3c;
+    .alert b {
       display: block;
+      margin-bottom: 2px;
     }
 
-    .msg.error {
-      background: #fdeaea;
-      color: #c0392b;
-      display: block;
+    .ok-ic {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: var(--ok);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px 0 4px;
     }
 
-    .gps-note {
-      font-size: 12px;
-      color: #888;
-      margin-top: 10px;
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-top: 16px;
+    }
+
+    .card div {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    .card div:last-child {
+      border: 0;
+    }
+
+    .card span {
+      color: var(--mut);
+    }
+
+    .card b {
+      text-align: right;
+      word-break: break-word;
+    }
+
+    footer.credit {
+      padding: 18px 20px 16px;
       text-align: center;
+      font-size: 11px;
+      color: #98a0ae;
+    }
+
+    footer.credit a {
+      color: inherit;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      vertical-align: middle;
+    }
+
+    footer.credit a:hover {
+      color: var(--ink);
+    }
+
+    footer.credit svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+    }
+
+    @media (min-width:640px) {
+      main {
+        padding-top: 40px;
+      }
+
+      .panel {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 32px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      input:disabled {
+        background: #eceef2;
+      }
+
+      .card {
+        background: var(--paper);
+      }
+    }
+
+    @media (max-height:480px) and (orientation:landscape) {
+      main {
+        padding-top: 14px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <div class="card">
-    <div class="logos"><img src="LOGOPMTG.png" alt="JPP Politeknik METrO Tasek Gelugor"
-        onerror="this.style.display='none'"></div>
-    <h1>HARI SUKAN NEGARA PMTG 2026</h1>
-    <p class="sub" id="eventLabel">Attendance Check-In</p>
+  <header class="hd">
+    <img src="LOGOPMTG-cropped.png" alt="Politeknik Malaysia METrO Tasek Gelugor" onerror="this.style.display='none'">
+  </header>
 
-    <form id="checkinForm">
-      <label for="fullName">Full Name</label>
-      <input type="text" id="fullName" placeholder="JOHN A/L DOE" required disabled>
+  <main>
+    <section class="panel" id="formPanel">
+      <span class="pill"><span class="dot wait" id="evDot"></span><span id="eventLabel">Mencari sesi aktif · Finding
+          active session…</span></span>
+      <h1 class="h">PMTG Attendance System</h1>
+      <p class="sub">Daftar kehadiran · Attendance check-in</p>
 
-      <label for="className">Class</label>
-      <input type="text" id="className" placeholder="DIT3B" required disabled>
+      <form id="checkinForm">
+        <label for="fullName">Nama penuh <i>Full name</i></label>
+        <input type="text" id="fullName" placeholder="JOHN A/L DOE" autocomplete="name" autocapitalize="characters"
+          required disabled>
 
-      <label for="matricNo">Matric Number</label>
-      <input type="text" id="matricNo" placeholder="XXDITXXF10XX" required disabled>
+        <label for="className">Kelas <i>Class</i></label>
+        <input type="text" id="className" placeholder="DIT3B" autocomplete="off" autocapitalize="characters" required
+          disabled>
 
-      <button type="submit" id="submitBtn" disabled>Loading...</button>
-      <div class="gps-note" id="gpsNote">Finding the active session...</div>
-    </form>
+        <label for="matricNo">No. matrik <i>Matric number</i></label>
+        <input type="text" id="matricNo" placeholder="XXDITXXF10XX" autocomplete="off" autocapitalize="characters"
+          required disabled>
 
-    <div class="msg" id="msg"></div>
-  </div>
+        <div class="loc"><span class="dot wait" id="gpsDot"></span><span class="txt" id="gpsNote">Mencari lokasi ·
+            Finding your location…</span><button type="button" class="retry" id="retryLoc" hidden>Cuba lagi ·
+            Retry</button></div>
+
+        <button type="submit" class="go" id="submitBtn" disabled><span>Memuatkan…</span><small>Loading…</small></button>
+      </form>
+
+      <div class="alert" id="msg" role="alert" hidden><b id="msgT"></b><span id="msgB"></span></div>
+    </section>
+
+    <section class="panel" id="donePanel" hidden>
+      <div class="ok-ic"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </svg></div>
+      <h2 class="h">Kehadiran direkod</h2>
+      <p class="sub">Attendance recorded. Screenshot this page as proof.</p>
+      <div class="card">
+        <div><span>Nama · Name</span><b id="dName"></b></div>
+        <div><span>Kelas · Class</span><b id="dClass"></b></div>
+        <div><span>No. matrik · Matric no.</span><b id="dMatric"></b></div>
+        <div><span>Acara · Event</span><b id="dEvent"></b></div>
+        <div><span>Masa · Time</span><b id="dTime"></b></div>
+      </div>
+      <p class="sub" style="margin-top:16px">Anda boleh menutup halaman ini. · You may close this page.</p>
+    </section>
+  </main>
+
+  <footer class="credit">System Built by:
+    <a href="https://github.com/Ermxxn" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+      </svg>ermxxn</a>
+  </footer>
 
   <script>
     // ====== CONFIG — edit these lines ======
@@ -169,16 +424,11 @@
     const ACTIVE_EVENT_FUNCTION = "super-responder"; // the function that reports who's live
     // ==========================================
 
-    const form = document.getElementById("checkinForm");
-    const submitBtn = document.getElementById("submitBtn");
-    const msg = document.getElementById("msg");
-    const gpsNote = document.getElementById("gpsNote");
-    const eventLabel = document.getElementById("eventLabel");
-    const fields = ["fullName", "className", "matricNo"].map((id) => document.getElementById(id));
+    const $ = (id) => document.getElementById(id);
+    const form = $("checkinForm"), submitBtn = $("submitBtn"), gpsNote = $("gpsNote"), gpsDot = $("gpsDot");
+    const fields = ["fullName", "className", "matricNo"].map($);
 
-    let eventId = null;
-    let gpsLat = null;
-    let gpsLng = null;
+    let eventId = null, eventName = "", gpsLat = null, gpsLng = null;
 
     fields.forEach((el) => {
       el.addEventListener("input", () => {
@@ -188,55 +438,80 @@
       });
     });
 
-    function showMsg(text, type) {
-      msg.textContent = text;
-      msg.className = `msg ${type}`;
+    function setBtn(bm, en) {
+      submitBtn.textContent = "";
+      const a = document.createElement("span"); a.textContent = bm;
+      const b = document.createElement("small"); b.textContent = en;
+      submitBtn.append(a, b);
+    }
+
+    // Bilingual error text: [Bahasa Malaysia title, English detail]
+    function friendly(message) {
+      const s = String(message || "");
+      if (/venue/i.test(s)) return ["Anda berada di luar kawasan acara", s];
+      if (/already/i.test(s)) return ["Kehadiran telah direkodkan", s];
+      if (/session|not active|no active/i.test(s)) return ["Tiada sesi kehadiran aktif", s];
+      if (/failed to fetch|network|load failed/i.test(s)) return ["Masalah sambungan", "Connection problem. Check your internet and try again."];
+      return ["Ralat · Error", s || "Something went wrong."];
+    }
+
+    function showErr(message) {
+      const [t, b] = friendly(message);
+      $("msgT").textContent = t;
+      $("msgB").textContent = b;
+      $("msg").hidden = false;
+    }
+
+    function setLoc(state, bm, en) {
+      gpsDot.className = "dot " + state;
+      gpsNote.textContent = `${bm} · ${en}`;
+      $("retryLoc").hidden = state !== "bad";
     }
 
     function enableForm() {
       fields.forEach((el) => { el.disabled = false; });
       submitBtn.disabled = false;
-      submitBtn.textContent = "Mark Attendance";
+      setBtn("Hantar kehadiran", "Mark attendance");
     }
 
     async function loadActiveEvent() {
       try {
         const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/${ACTIVE_EVENT_FUNCTION}`, {
-          headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          },
+          headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "No attendance session is active right now");
 
         eventId = data.event_id;
-        eventLabel.textContent = data.event_name;
+        eventName = data.event_name;
+        $("eventLabel").textContent = `Sesi aktif · ${eventName}`;
+        $("evDot").className = "dot";
         enableForm();
       } catch (err) {
-        showMsg(err.message, "error");
-        gpsNote.textContent = "";
-        submitBtn.textContent = "Unavailable";
+        $("eventLabel").textContent = "Tiada sesi aktif · No active session";
+        $("evDot").className = "dot bad";
+        showErr(err.message);
+        setBtn("Tidak tersedia", "Unavailable");
       }
     }
 
     function startLocation() {
       if (!navigator.geolocation) {
-        gpsNote.textContent = "Location is not supported on this device/browser.";
+        setLoc("bad", "Lokasi tidak disokong pada peranti ini", "Location is not supported on this device");
         return;
       }
+      setLoc("wait", "Mencari lokasi", "Finding your location…");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           gpsLat = pos.coords.latitude;
           gpsLng = pos.coords.longitude;
-          gpsNote.textContent = "Location captured ✓";
+          setLoc("ok", "Lokasi dikesan", "Location captured");
         },
-        () => {
-          gpsNote.textContent = "Could not get location — enable location access and reload.";
-        },
+        () => setLoc("bad", "Lokasi tidak dapat dikesan. Benarkan akses lokasi.", "Could not get location. Allow location access."),
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
+    $("retryLoc").addEventListener("click", startLocation);
 
     loadActiveEvent();
     startLocation();
@@ -244,41 +519,42 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!eventId) return;
+      $("msg").hidden = true;
+
+      if (gpsLat === null) {
+        showErr("Location is required to check in. Allow location access, then try again.");
+        $("msgT").textContent = "Lokasi diperlukan";
+        return;
+      }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting...";
-      msg.className = "msg";
+      setBtn("Menghantar…", "Submitting…");
 
-      const full_name = document.getElementById("fullName").value.trim();
-      const className = document.getElementById("className").value.trim();
-      const matric_no = document.getElementById("matricNo").value.trim();
+      const full_name = $("fullName").value.trim();
+      const className = $("className").value.trim();
+      const matric_no = $("matricNo").value.trim();
 
       try {
         const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/check-in`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            event_id: eventId,
-            full_name,
-            class: className,
-            matric_no,
-            gps_lat: gpsLat,
-            gps_lng: gpsLng,
-          }),
+          headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ event_id: eventId, full_name, class: className, matric_no, gps_lat: gpsLat, gps_lng: gpsLng }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || data.message || "Something went wrong");
 
-        showMsg("Attendance marked successfully! You may close this page.", "success");
-        form.style.display = "none";
+        $("dName").textContent = full_name;
+        $("dClass").textContent = className;
+        $("dMatric").textContent = matric_no;
+        $("dEvent").textContent = eventName;
+        $("dTime").textContent = new Date().toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+        $("formPanel").hidden = true;
+        $("donePanel").hidden = false;
+        window.scrollTo({ top: 0 });
       } catch (err) {
-        showMsg(err.message, "error");
+        showErr(err.message);
         submitBtn.disabled = false;
-        submitBtn.textContent = "Mark Attendance";
+        setBtn("Hantar kehadiran", "Mark attendance");
       }
     });
   </script>
