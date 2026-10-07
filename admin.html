@@ -736,7 +736,8 @@
                             <div style="flex:1 1 110px"><label class="f" for="mClass">Class</label><input type="text"
                                     id="mClass" autocomplete="off"></div>
                             <div style="flex:1 1 150px"><label class="f" for="mMatric">Matric number</label><input
-                                    type="text" id="mMatric" autocomplete="off"></div>
+                                    type="text" id="mMatric" autocomplete="off" maxlength="12"
+                                    placeholder="12 letters/numbers"></div>
                             <div class="btn-wrap"><button class="btn" id="addBtn">Add</button></div>
                         </div>
                     </div>
@@ -1331,6 +1332,10 @@
                 [...tr.children].forEach((td, i) => { if (!td.colSpan || td.colSpan === 1) td.dataset.label = labels[i] || ""; });
             });
         }
+
+        $("mMatric").addEventListener("input", (e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+        });
 
         // Section tabs (sidebar on desktop, top tabs on tablet, bottom bar on phone)
         function showTab(name) {

@@ -297,6 +297,24 @@
       word-break: break-word;
     }
 
+    .hint {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--mut);
+    }
+
+    .hint.ok #matricCount {
+      color: var(--ok);
+      font-weight: 600;
+    }
+
+    input.bad {
+      border-color: var(--red);
+    }
+
     footer.credit {
       padding: 18px 20px 16px;
       text-align: center;
@@ -380,7 +398,10 @@
 
         <label for="matricNo">No. matrik <i>Matric number</i></label>
         <input type="text" id="matricNo" placeholder="XXDITXXF10XX" autocomplete="off" autocapitalize="characters"
-          required disabled>
+          autocorrect="off" spellcheck="false" maxlength="12" minlength="12" pattern="[A-Za-z0-9]{12}" required disabled
+          aria-describedby="matricHint">
+        <div class="hint" id="matricHint"><span>Huruf dan nombor sahaja · Letters and numbers only</span><span
+            id="matricCount">0/12</span></div>
 
         <div class="loc"><span class="dot wait" id="gpsDot"></span><span class="txt" id="gpsNote">Mencari lokasi ·
             Finding your location…</span><button type="button" class="retry" id="retryLoc" hidden>Cuba lagi ·
@@ -438,6 +459,17 @@
       });
     });
 
+    // Matric number: letters and numbers only, exactly 12 characters
+    const MATRIC_RE = /^[A-Z0-9]{12}$/;
+    $("matricNo").addEventListener("input", (e) => {
+      const el = e.target;
+      const clean = el.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+      if (clean !== el.value) el.value = clean;
+      $("matricCount").textContent = `${clean.length}/12`;
+      $("matricHint").classList.toggle("ok", clean.length === 12);
+      el.classList.remove("bad");
+    });
+
     function setBtn(bm, en) {
       submitBtn.textContent = "";
       const a = document.createElement("span"); a.textContent = bm;
@@ -449,7 +481,7 @@
     function friendly(message) {
       const s = String(message || "");
       if (/venue/i.test(s)) return ["Anda berada di luar kawasan acara", s];
-      if (/already/i.test(s)) return ["Kehadiran telah direkodkan", s];
+      if (/already|duplicate|unique|exists/i.test(s)) return ["Kehadiran telah direkodkan", s];
       if (/session|not active|no active/i.test(s)) return ["Tiada sesi kehadiran aktif", s];
       if (/failed to fetch|network|load failed/i.test(s)) return ["Masalah sambungan", "Connection problem. Check your internet and try again."];
       return ["Ralat · Error", s || "Something went wrong."];
@@ -459,6 +491,12 @@
       const [t, b] = friendly(message);
       $("msgT").textContent = t;
       $("msgB").textContent = b;
+      $("msg").hidden = false;
+    }
+
+    function showCustom(title, body) {
+      $("msgT").textContent = title;
+      $("msgB").textContent = body;
       $("msg").hidden = false;
     }
 
@@ -520,6 +558,13 @@
       e.preventDefault();
       if (!eventId) return;
       $("msg").hidden = true;
+
+      if (!MATRIC_RE.test($("matricNo").value.trim())) {
+        showCustom("No. matrik tidak sah", "Matric number must be exactly 12 characters: letters and numbers only, no spaces or symbols.");
+        $("matricNo").classList.add("bad");
+        $("matricNo").focus();
+        return;
+      }
 
       if (gpsLat === null) {
         showErr("Location is required to check in. Allow location access, then try again.");
