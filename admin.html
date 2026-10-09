@@ -828,6 +828,17 @@
                                 </select></div>
                             <div class="btn-wrap"><button class="btn accent" id="exportBtn">Download PDF</button></div>
                         </div>
+                        <div class="row" style="margin-top:14px;align-items:center">
+                            <div class="btn-wrap" style="display:flex;align-items:center;gap:8px">
+                                <input type="checkbox" id="groupByClass" checked
+                                    style="width:18px;height:18px;margin:0;padding:0;accent-color:var(--red)">
+                                <label class="f" for="groupByClass" style="margin:0">New page per class</label>
+                            </div>
+                        </div>
+                        <p class="cap" style="margin:10px 0 0">When checked, each class starts on its own page and
+                            numbering restarts at 1 per class. "Sort by" then controls the order of names within each
+                            class instead of the class order. Classes written with or without a space (e.g. "DIT 3B"
+                            and "DIT3B") are treated as the same class.</p>
                     </div>
                 </section>
                 <div class="credit">System Built by: <a href="https://github.com/Ermxxn" target="_blank"
@@ -906,66 +917,115 @@
             return String(s).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "attendance";
         }
 
-        // Draws the whole PDF onto `doc`: logo (centered), event name, date/total, then the table
-        function buildPdf(doc, ev, title, rows, logo) {
+        // Classes stored with and without a space ("DCV 1A" vs "DCV1A") are the
+        // same class, so group/sort by this cleaned-up form, not the raw text.
+        function classKey(c) {
+            return String(c || "").replace(/\s+/g, "").toUpperCase() || "\u2014";
+        }
+
+        // Draws the whole PDF onto `doc`: logo (centered), event name, date/total,
+        // then either one flat table or one table per class (groupByClass = true),
+        // with each class starting on its own page and numbering restarting at 1.
+        function buildPdf(doc, ev, title, rows, logo, groupByClass) {
             const pageW = doc.internal.pageSize.getWidth();
             const pageH = doc.internal.pageSize.getHeight();
             const M = 14;
-            let y = 12;
 
-            // Logo, centered at the top
-            if (logo) {
-                let h = 26;
-                let w = (logo.w / logo.h) * h;
-                if (w > 70) { w = 70; h = (logo.h / logo.w) * w; }
-                doc.addImage(logo.dataUrl, "PNG", (pageW - w) / 2, y, w, h);
-                y += h + 7;
-            } else {
-                y += 4;
+            function drawHeader(compact) {
+                let y = 12;
+                if (logo) {
+                    let h = compact ? 15 : 26;
+                    let w = (logo.w / logo.h) * h;
+                    const maxW = compact ? 40 : 70;
+                    if (w > maxW) { w = maxW; h = (logo.h / logo.w) * w; }
+                    doc.addImage(logo.dataUrl, "PNG", (pageW - w) / 2, y, w, h);
+                    y += h + (compact ? 5 : 7);
+                } else {
+                    y += compact ? 2 : 4;
+                }
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(compact ? 13 : 16);
+                doc.setTextColor(11, 30, 58);
+                const titleLines = doc.splitTextToSize(title.toUpperCase(), pageW - 2 * M);
+                doc.text(titleLines, pageW / 2, y, { align: "center" });
+                y += titleLines.length * (compact ? 6 : 7);
+
+                if (!compact) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(11);
+                    doc.setTextColor(90, 98, 115);
+                    doc.text("ATTENDANCE LIST", pageW / 2, y, { align: "center" });
+                    y += 6;
+                    doc.setFontSize(10);
+                    doc.text(`${fmtDate(ev.event_date)}   |   Total attendance: ${rows.length}`, pageW / 2, y, { align: "center" });
+                    y += 4;
+                }
+
+                doc.setDrawColor(255, 204, 0);
+                doc.setLineWidth(0.8);
+                doc.line(M, y, pageW - M, y);
+                return y + 5;
             }
 
-            // Event name (wraps if long)
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(16);
-            doc.setTextColor(11, 30, 58);
-            const titleLines = doc.splitTextToSize(title.toUpperCase(), pageW - 2 * M);
-            doc.text(titleLines, pageW / 2, y, { align: "center" });
-            y += titleLines.length * 7;
+            function drawClassHeading(className, count, y) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12.5);
+                doc.setTextColor(11, 30, 58);
+                doc.text(`CLASS: ${className}`, M, y);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9.5);
+                doc.setTextColor(90, 98, 115);
+                doc.text(`${count} student${count === 1 ? "" : "s"}`, pageW - M, y, { align: "right" });
+                return y + 5;
+            }
 
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(11);
-            doc.setTextColor(90, 98, 115);
-            doc.text("ATTENDANCE LIST", pageW / 2, y, { align: "center" });
-            y += 6;
-            doc.setFontSize(10);
-            doc.text(`${fmtDate(ev.event_date)}   |   Total attendance: ${rows.length}`, pageW / 2, y, { align: "center" });
-            y += 4;
+            function drawTable(tableRows, startNo, y) {
+                doc.autoTable({
+                    startY: y,
+                    head: [["No.", "Full Name", "Class", "Matric Number", "Time"]],
+                    body: tableRows.map((r, i) => [startNo + i, r.full_name, r.class, r.matric_no, fmtTime(r.checked_in_at)]),
+                    theme: "grid",
+                    margin: { left: M, right: M, top: 16, bottom: 18 },
+                    styles: {
+                        font: "helvetica", fontSize: 9, cellPadding: 2.2, valign: "middle",
+                        lineColor: [220, 224, 233], lineWidth: 0.2, textColor: [30, 35, 50],
+                    },
+                    headStyles: { fillColor: [11, 30, 58], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
+                    alternateRowStyles: { fillColor: [245, 247, 251] },
+                    columnStyles: {
+                        0: { halign: "center", cellWidth: 12 },
+                        2: { halign: "center", cellWidth: 26 },
+                        3: { halign: "center", cellWidth: 38 },
+                        4: { halign: "center", cellWidth: 22 },
+                    },
+                });
+            }
 
-            doc.setDrawColor(255, 204, 0);
-            doc.setLineWidth(0.8);
-            doc.line(M, y, pageW - M, y);
-            y += 5;
+            if (groupByClass) {
+                const groups = new Map();
+                rows.forEach((r) => {
+                    const key = classKey(r.class);
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push(r);
+                });
+                const entries = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], "en", { numeric: true }));
 
-            // Table (auto-paginates, repeats the header on every page)
-            doc.autoTable({
-                startY: y,
-                head: [["No.", "Full Name", "Class", "Matric Number", "Time"]],
-                body: rows.map((r, i) => [i + 1, r.full_name, r.class, r.matric_no, fmtTime(r.checked_in_at)]),
-                theme: "grid",
-                margin: { left: M, right: M, top: 16, bottom: 18 },
-                styles: {
-                    font: "helvetica", fontSize: 9, cellPadding: 2.2, valign: "middle",
-                    lineColor: [220, 224, 233], lineWidth: 0.2, textColor: [30, 35, 50],
-                },
-                headStyles: { fillColor: [11, 30, 58], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
-                alternateRowStyles: { fillColor: [245, 247, 251] },
-                columnStyles: {
-                    0: { halign: "center", cellWidth: 12 },
-                    2: { halign: "center", cellWidth: 26 },
-                    3: { halign: "center", cellWidth: 38 },
-                    4: { halign: "center", cellWidth: 22 },
-                },
-            });
+                entries.forEach(([className, classRows], i) => {
+                    let y;
+                    if (i === 0) {
+                        y = drawHeader(false);
+                    } else {
+                        doc.addPage();
+                        y = drawHeader(true);
+                    }
+                    y = drawClassHeading(className, classRows.length, y);
+                    drawTable(classRows, 1, y);
+                });
+            } else {
+                const y = drawHeader(false);
+                drawTable(rows, 1, y);
+            }
 
             // Footer on every page
             const total = doc.getNumberOfPages();
@@ -1011,9 +1071,19 @@
                 const rows = data.records.slice();
                 if (!rows.length) { toast("No attendance records to export yet", true); return; }
 
-                if ($("sortBy").value === "class") {
+                const grouped = $("groupByClass").checked;
+                const sortBy = $("sortBy").value;
+
+                if (grouped) {
+                    // Always grouped by class; "Sort by" orders names within each class instead
                     rows.sort((a, b) =>
-                        a.class.localeCompare(b.class, "en", { numeric: true }) ||
+                        classKey(a.class).localeCompare(classKey(b.class), "en", { numeric: true }) ||
+                        (sortBy === "time"
+                            ? new Date(a.checked_in_at) - new Date(b.checked_in_at)
+                            : a.full_name.localeCompare(b.full_name, "en")));
+                } else if (sortBy === "class") {
+                    rows.sort((a, b) =>
+                        classKey(a.class).localeCompare(classKey(b.class), "en", { numeric: true }) ||
                         a.full_name.localeCompare(b.full_name, "en"));
                 }
 
@@ -1023,7 +1093,7 @@
 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-                buildPdf(doc, ev, title, rows, logo);
+                buildPdf(doc, ev, title, rows, logo, grouped);
                 doc.save(`${slug(title)}_attendance.pdf`);
                 toast("PDF downloaded");
             } catch (err) {
